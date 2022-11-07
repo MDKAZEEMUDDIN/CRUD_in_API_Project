@@ -5,6 +5,7 @@ using System.Net.WebSockets;
 using System.Configuration;
 using Microsoft.Extensions.Configuration;
 using System.Data;
+using Employee.Services;
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace Demo_Core_Api.Controllers
@@ -15,64 +16,37 @@ namespace Demo_Core_Api.Controllers
     {
         public IConfiguration _configuration { get; }
         SqlConnection con;
+        ServiceMethod ser;
+        
         public EmployeeController(IConfiguration configuration)
         {
             _configuration = configuration;
              con = new SqlConnection(_configuration.GetConnectionString("Company"));
-
+                     ser= new ServiceMethod(con);
         }
-
+            
         [HttpGet]
         public JsonResult GetAllEmployee()
         {
-            List<Emp_Model> employees = new List<Emp_Model>();
             try
             {
-                SqlCommand cmd = con.CreateCommand();
-                cmd.CommandType = CommandType.Text;
-                cmd.CommandText = "SELECT * FROM Employee2";
-                con.Open();
-                SqlDataReader sdr = cmd.ExecuteReader();
-                while (sdr.Read())
-                {
-                    employees.Add(new Emp_Model
-                    {
-                        Id = Convert.ToInt32(sdr["Id"]),
-                        EmployeeName = Convert.ToString(sdr["EmployeeName"]),
-                        Age = Convert.ToInt32(sdr["Age"])
-                    });
-                }
+                return new JsonResult(ser.GetAll());
             }
-            catch (Exception ex)
+           catch (Exception ex)
             {
                 return new JsonResult(ex.Message);
             }
-            finally
-            {
-                con.Close();
-            }
-            return new JsonResult(employees);
-
         }
 
         [HttpPost]
         public Boolean AddEmployee(Emp_Model employee)
         {
-            try
+            try 
             {
-                SqlCommand cmd = con.CreateCommand();
-                cmd.CommandType = CommandType.Text;
-                //insert into Employee2(Id,EmployeeName,Age)values(2,'Kazeem',24);
-                cmd.CommandText = "Insert into Employee2(ID,EmployeeName, Age) values(" + employee.Id + ",'" + employee.EmployeeName + "'," + employee.Age + ")";
-                con.Open();
-                cmd.ExecuteNonQuery();
-                return true;
+               //ser.AddEmployee(employee);   
+                return ser.AddEmployee(employee);
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return false;
-            }
+            
             finally
             {
                 con.Close();
@@ -83,18 +57,10 @@ namespace Demo_Core_Api.Controllers
         {
             try
             {
-                SqlCommand cmd = con.CreateCommand();
-                cmd.CommandType = CommandType.Text;
-                cmd.CommandText = "Update Employee2 Set EmployeeName='" + employee.EmployeeName + "', Age=" + employee.Age + " Where(ID=" + id + ");";
-                con.Open();
-                cmd.ExecuteNonQuery();
-                return true;
+              return ser.UpdateEmployee(id, employee);
+              return true;
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return false;
-            }
+           
             finally
             {
                 con.Close();
@@ -105,18 +71,11 @@ namespace Demo_Core_Api.Controllers
         {
             try
             {
-                SqlCommand cmd = con.CreateCommand();
-                cmd.CommandType = CommandType.Text;
-                cmd.CommandText = "Delete from Employee2 Where(ID=" + id + ");";
-                con.Open();
-                cmd.ExecuteNonQuery();
-                return true;
+               ser.DeleteEmployee(id);
+               return true;
+               
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return false;
-            }
+          
             finally
             {
                 con.Close();
